@@ -3,6 +3,7 @@ from Tratamentos import *
 import pandas as pd
 from playwright.sync_api import sync_playwright
 import openpyxl
+import keyboard
 
 # definicao de inputs
 # nome do arquivo xlsx
@@ -30,9 +31,12 @@ with sync_playwright() as p:
     # coletando os dados e passando para a planilha
     for c in range(celula_inicio, len(planilha_principal['A'])):
         try:
+            if keyboard.is_pressed('q'):
+                print("saindo")
+                break
             # Entrando no site
             pagina.goto("https://www.informecadastral.com.br/")
-            sleep(3)
+            sleep(2)
 
             # acessando cnpjs
             cedula_atual = planilha_principal[f'A{c}'].value
@@ -53,13 +57,9 @@ with sync_playwright() as p:
             municipio = partes_estado_mun[1]
             planilha_principal[f'D{c}'].value = municipio
 
-            nome_especifico = pagina.locator(
-                "xpath=//div[contains(@class, 'col-md-10')]/p").text_content()
-            planilha_principal[f'J{c}'].value = nome_especifico
-
             # Código CNAE
             codigo_cnae = pagina.locator(
-                "xpath=/html/body/div/div[2]/div/div/div[3]/div[3]/ul/li[2]/div/div[1]/p").text_content()
+                "xpath=//div[contains(@class, 'col-md-2')]/p").inner_text()
             planilha_principal[f'E{c}'].value = codigo_cnae
 
             # CNAE SEÇÃO E DIVISÃO
@@ -70,10 +70,17 @@ with sync_playwright() as p:
                     planilha_principal[f'G{c}'].value = CNAE[f'B{cell}'].value
                     planilha_principal[f'H{c}'].value = CNAE[f'C{cell}'].value
                     planilha_principal[f'I{c}'].value = CNAE[f'D{cell}'].value
+
+            nome_especifico = pagina.locator(
+                "xpath=//div[contains(@class, 'col-md-10')]/p").inner_text()
+            planilha_principal[f'J{c}'].value = nome_especifico
+
             print(f'{c}º')
+
         except Exception as e:
             print(f'{Exception}, {e}')
             # Salvando
         arquivo.save(arq)
+    pagina.close()
 # tabela = pd.read_excel(arquivo)
 # print(tabela)
